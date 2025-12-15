@@ -42,5 +42,5 @@ async def call_gemini(user_message: str) -> str:
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     print("Reply!")
-    reply = await call_gemini(req.message)
+    reply = call_gemini(req.message)
     return ChatResponse(reply=reply)
