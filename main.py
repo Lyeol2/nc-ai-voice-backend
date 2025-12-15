@@ -44,4 +44,5 @@ async def call_gemini(user_message: str) -> str:
 async def chat(req: ChatRequest):
     print("Reply!")
     reply = await call_gemini(req.message)
+    print(reply)
     return ChatResponse(reply=reply)
