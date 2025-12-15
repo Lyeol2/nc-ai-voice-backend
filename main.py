@@ -21,9 +21,6 @@ genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-2.5-flash')
 
 
-
-print(response.text)
-
 app = FastAPI()
 
 # ===== 요청/응답 모델 =====
@@ -36,15 +33,8 @@ class ChatResponse(BaseModel):
 
 # ===== Gemini 호출 =====
 async def call_gemini(user_message: str) -> str:
-    headers = {
-        "Content-Type": "application/json",
-        "x-goog-api-key": GEMINI_API_KEY
-    }
-
     response = await model.generate_content(user_message)
-
     data = response.json()
-
     return data["candidates"][0]["content"]["parts"][0]["text"]
 
 
