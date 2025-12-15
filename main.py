@@ -14,7 +14,7 @@ GEMINI_URL = (
 
 app = FastAPI()
 
-# ===== ¿äÃ»/ÀÀ´ä ¸ğµ¨ =====
+# ===== ìš”ì²­/ì‘ë‹µ ëª¨ë¸ =====
 class ChatRequest(BaseModel):
     message: str
 
@@ -22,7 +22,7 @@ class ChatResponse(BaseModel):
     reply: str
 
 
-# ===== Gemini È£Ãâ =====
+# ===== Gemini í˜¸ì¶œ =====
 async def call_gemini(user_message: str) -> str:
     headers = {
         "Content-Type": "application/json",
@@ -30,8 +30,8 @@ async def call_gemini(user_message: str) -> str:
     }
 
     system_prompt = (
-        "³Ê´Â ÆÇÅ¸Áö RPG °ÔÀÓÀÇ NPC´Ù. "
-        "´ë´äÀº 1~2¹®ÀåÀ¸·Î °£°áÇÏ°Ô ÇÑ´Ù."
+        "ë„ˆëŠ” íŒíƒ€ì§€ RPG ê²Œì„ì˜ NPCë‹¤. "
+        "ëŒ€ë‹µì€ 1~2ë¬¸ì¥ìœ¼ë¡œ ê°„ê²°í•˜ê²Œ í•œë‹¤."
     )
 
     payload = {
@@ -57,7 +57,7 @@ async def call_gemini(user_message: str) -> str:
     return data["candidates"][0]["content"]["parts"][0]["text"]
 
 
-# ===== Unity¿¡¼­ È£ÃâÇÏ´Â API =====
+# ===== Unityì—ì„œ í˜¸ì¶œí•˜ëŠ” API =====
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     reply = await call_gemini(req.message)
