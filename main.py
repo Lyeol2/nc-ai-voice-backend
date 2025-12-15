@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import httpx
 import os
 import google.generativeai as genai
-
+import asyncio
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -33,9 +33,10 @@ class ChatResponse(BaseModel):
 
 # ===== Gemini 호출 =====
 async def call_gemini(user_message: str) -> str:
-    response = await model.generate_content(user_message)
-    data = response.json()
-    return data["candidates"][0]["content"]["parts"][0]["text"]
+    response = await asyncio.to_thread(
+        model.generate_content, user_message
+    )
+    return response.text
 
 
 # ===== Unity에서 호출하는 API =====
