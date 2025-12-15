@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import httpx
 import os
+import google.generativeai as genai
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,6 +13,16 @@ GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/"
     "models/gemini-2.5-flash:generateContent"
 )
+
+
+# API 키 설정
+genai.configure(api_key=GEMINI_API_KEY)
+# Gemini 모델 로드
+model = genai.GenerativeModel('gemini-2.5-flash')
+
+
+
+print(response.text)
 
 app = FastAPI()
 
@@ -29,40 +41,9 @@ async def call_gemini(user_message: str) -> str:
         "x-goog-api-key": GEMINI_API_KEY
     }
 
-    payload = {
-        "contents": [
-            {
-                "role": "user",
-                "parts": [
-                    {
-                        "text": (
-                            "너는 판타지 RPG 게임의 NPC다. "
-                            "대답은 1~2문장으로 간결하게 한다.\n\n"
-                            f"유저 입력: {user_message}"
-                        )
-                    }
-                ]
-            }
-        ],
-        "generationConfig": {
-            "temperature": 0.7,
-            "maxOutputTokens": 200
-        }
-    }
+    response = await model.generate_content(user_message)
 
-    async with httpx.AsyncClient(timeout=20) as client:
-        response = await client.post(
-            GEMINI_URL,
-            headers=headers,
-            json=payload
-        )
-
-        # 🔴 디버그 (이거 꼭 남겨두세요)
-        print("Gemini status:", response.status_code)
-        print("Gemini body:", response.text)
-
-        response.raise_for_status()
-        data = response.json()
+    data = response.json()
 
     return data["candidates"][0]["content"]["parts"][0]["text"]
 
