@@ -35,35 +35,36 @@ async def call_gemini(user_message: str) -> str:
                 "role": "user",
                 "parts": [
                     {
-                        "text": f"""
-너는 판타지 RPG 게임의 NPC다.
-대답은 1~2문장으로 간결하게 한다.
-
-유저 입력:
-{user_message}
-"""
+                        "text": (
+                            "너는 판타지 RPG 게임의 NPC다. "
+                            "대답은 1~2문장으로 간결하게 한다.\n\n"
+                            f"유저 입력: {user_message}"
+                        )
                     }
                 ]
             }
-        ]
+        ],
+        "generationConfig": {
+            "temperature": 0.7,
+            "maxOutputTokens": 200
+        }
     }
 
-    async with httpx.AsyncClient(timeout=15) as client:
+    async with httpx.AsyncClient(timeout=20) as client:
         response = await client.post(
             GEMINI_URL,
             headers=headers,
             json=payload
         )
 
-        # 🔥 디버그용 (중요)
+        # 🔴 디버그 (이거 꼭 남겨두세요)
         print("Gemini status:", response.status_code)
-        print("Gemini response:", response.text)
+        print("Gemini body:", response.text)
 
         response.raise_for_status()
         data = response.json()
 
     return data["candidates"][0]["content"]["parts"][0]["text"]
-
 
 
 # ===== Unity에서 호출하는 API =====
