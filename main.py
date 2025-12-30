@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from queue import Queue
 import os
 import google.generativeai as genai
 import asyncio
@@ -13,7 +14,9 @@ import httpx
 import soundfile as sf
 import wave
 import numpy as np
+import uuid as uid
 
+from Define import *
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,30 +31,15 @@ GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/"
     "models/gemini-2.5-flash:generateContent"
 )
+app = FastAPI()
 
 
 # API 키 설정
 genai.configure(api_key=GEMINI_API_KEY)
 # Gemini 모델 로드
 model = genai.GenerativeModel('gemini-2.5-flash')
+sessions = dict()
 
-
-app = FastAPI()
-
-# ===== 요청/응답 모델 =====
-class ChatRequest(BaseModel):
-    message: str
-
-class ChatResponse(BaseModel):
-    reply: str
-
-class SoundRequest(BaseModel):
-    voice : str
-    language : str 
-    text : str   
-
-class SoundResponse(BaseModel):
-    soundWAV : str
 
 # ===== VARCO VOICE 호출 ====
 async def call_voice(soundData : SoundRequest) -> str:
@@ -81,11 +69,11 @@ async def call_voice(soundData : SoundRequest) -> str:
 
 
 # ===== Gemini 호출 =====
-async def call_gemini(user_message: str) -> str:
-    response = await asyncio.to_thread(
-        model.generate_content, user_message
-    )
-    return response.text
+async def call_gemini(user_message: str, chat_session: genai.ChatSession) -> str:
+        response = await asyncio.to_thread(
+            chat_session.send_message,
+            user_message)
+        return response.text
 
 
 def float_wav_to_pcm16_base64(wav_bytes: bytes) -> str:
@@ -117,7 +105,7 @@ def float_wav_to_pcm16_base64(wav_bytes: bytes) -> str:
     return base64.b64encode(out.getvalue()).decode("utf-8")
 
 @app.post("/api/voice", response_model=SoundResponse)
-async def chat(req: SoundRequest):
+async def VoiceRequest(req: SoundRequest):
     print("sound request")
     reply = await call_voice(req)
 
@@ -130,6 +118,29 @@ async def chat(req: SoundRequest):
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     print("Reply!")
-    reply = await call_gemini(req.message)
+    reply = await call_gemini(req.message, sessions[req.sessionUUID])
     print(reply)
     return ChatResponse(reply=reply)
+
+# 세션 세팅
+@app.post("/api/session/open", response_model=Response)
+async def OpenSession(req: Session):
+
+    chat = CreateChatSession(req.Serialize())
+    uuid = f"{uid.uuid1()}"
+    sessions[uuid] = chat
+
+    return Response(code = 0, msg=f"{uuid}")
+
+
+@app.post("/api/session/close", response_model=Response)
+async def CloseSession(req : Session):
+    del sessions[req.uuid]
+    return Response(code = 0, msg = "Success")
+
+def CreateChatSession(prompt) -> genai.ChatSession:
+    chat = model.start_chat(history=[
+        {"role": "user", "parts": [prompt]},
+        {"role": "model", "parts": ["알겠습니다. 준비되었어요."]}
+    ])
+    return chat

@@ -4,3 +4,5 @@ httpx
 python-dotenv
 ipython
 soundfile
+openai
+google-genai
